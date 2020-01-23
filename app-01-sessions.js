@@ -25,21 +25,49 @@ app.use((req, res, next) => {
     next();
 });
 
+const is_logged_handler = (req, res, next) => {
+    // Ei kirjautunutta käyttäjää
+    if (!req.session.user) {
+        return res.redirect('/login');
+    }
+    next();
+};
+
+app.get('/', is_logged_handler, (req, res, next) => {
+    const user = req.session.user;
+    res.write(`
+        <html>
+        <body>
+            Logged in as user: ${user}
+            <form action="/logout" method="POST">
+                <button type="submit">Log out</button>
+            </form>
+        </body>
+        </html>
+    `);
+    res.end();
+});
+
+app.post('/logout', (req, res, next) => {
+    req.session.destroy();
+    res.redirect('/login');
+});
+
 app.get('/login', (req, res, next) => {
     console.log('user:', req.session.user);
     res.write(`
-    <html>
-    <body>
-        <form action="/login" method="POST">
-            <input type="text" name="user_name">
-            <button type="submit">Log in</button>
-        </form>
-        <form action="/register" method="POST">
-            <input type="text" name="user_name">
-            <button type="submit">Register</button>
-        </form>
-    </body>
-    </html>
+        <html>
+        <body>
+            <form action="/login" method="POST">
+                <input type="text" name="user_name">
+                <button type="submit">Log in</button>
+            </form>
+            <form action="/register" method="POST">
+                <input type="text" name="user_name">
+                <button type="submit">Register</button>
+            </form>
+        </body>
+        </html>
     `);
     res.end();
 });
@@ -55,7 +83,7 @@ app.post('/login', (req, res, next) => {
         //return res.send('User name already registered.');
         console.log('User logged in:', user);
         req.session.user = user;
-        return res.redirect('/login');
+        return res.redirect('/');
     }
     console.log('User not registered:', user);
     res.redirect('/login');
