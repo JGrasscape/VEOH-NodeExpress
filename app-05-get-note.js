@@ -146,6 +146,16 @@ app.post('/delete_note', (req, res, next) => {
     });
 });
 
+// Yksittäisen noten haku
+app.get('/note/:id', (req, res, next) => {
+    const note_id = req.params.id;
+    note_model.findOne({
+        _id: note_id
+    }).then((note) => {
+        res.send(note.text);
+    });
+});
+
 app.post('/logout', (req, res, next) => {
     req.session.destroy();
     res.redirect('/login');
