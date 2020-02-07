@@ -5,6 +5,9 @@ const session = require('express-session'); // terminal: npm install express-ses
 const mongoose = require('mongoose'); // terminal: npm install mongoose
 //const Schema = mongoose.Schema;
 
+// Controllers
+const auth_controller = require('./controllers/auth_controller');
+
 // Models
 const user_model = require('./models/user-model');
 const note_model = require('./models/note-model');
@@ -28,8 +31,6 @@ app.use(session({
     }
 }));
 
-let users = [];
-
 app.use((req, res, next) => {
     console.log('PATH: ' + req.path);
     next();
@@ -42,6 +43,12 @@ const is_logged_handler = (req, res, next) => {
     }
     next();
 };
+
+// Auth
+app.get('/login', auth_controller.get_login);
+app.post('/logout', auth_controller.post_logout);
+app.post('/login', auth_controller.post_login);
+app.post('/register', auth_controller.post_register);
 
 // Haetaan käyttäjän tietokanta-objekti
 app.use((req, res, next) => {
@@ -119,78 +126,6 @@ app.get('/note/:id', (req, res, next) => {
     }).then((note) => {
         res.send(note.text);
     });
-});
-
-app.post('/logout', (req, res, next) => {
-    req.session.destroy();
-    res.redirect('/login');
-});
-
-app.get('/login', (req, res, next) => {
-    console.log('user:', req.session.user);
-    res.send(auth_views.login_view());
-});
-
-app.post('/login', (req, res, next) => {
-    const user_name = req.body.user_name;
-    // Etsitään käyttäjää MongoDB:stä
-    user_model.findOne({
-        name: user_name
-    }).then((user) => {
-        if (user) {
-            req.session.user = user;
-            return res.redirect('/');
-        }
-        res.redirect('/login');
-    });
-
-    // // Löytyykö käyttäjä jo
-    // let user = users.find((name) => {
-    //     return user_name == name;
-    // });
-    // // Käyttäjä löytyi
-    // if (user) {
-    //     //return res.send('User name already registered.');
-    //     console.log('User logged in:', user);
-    //     req.session.user = user;
-    //     return res.redirect('/');
-    // }
-    // console.log('User not registered:', user);
-    // res.redirect('/login');
-});
-
-app.post('/register', (req, res, next) => {
-    const user_name = req.body.user_name;
-    // Etsitään käyttäjää MongoDB:stä
-    user_model.findOne({
-        name: user_name
-    }).then((user) => {
-        if (user) {
-            console.log('User name already registered');
-            return res.redirect('/login');
-        }
-
-        let new_user = new user_model({
-            name: user_name,
-            notes: []
-        });
-
-        new_user.save().then(() => {
-            return res.redirect('/login');
-        });
-    });
-
-    // // Löytyykö käyttäjä jo paikalliselta listalta
-    // let user = users.find((name) => {
-    //     return user_name == name;
-    // });
-    // // Käyttäjä löytyi, virhetilanne
-    // if (user) {
-    //     return res.send('User name already registered.');
-    // }
-    // users.push(user_name);    
-    // console.log('users:', users);
-    // res.redirect('/login');
 });
 
 app.use((req, res, next) => {
